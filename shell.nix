@@ -7,46 +7,52 @@
 }:
 
 let
-  gcc-papermario = builtins.fetchurl {
+  gcc-papermario = pkgsNative.fetchzip {
     url =
       "https://github.com/pmret/gcc-papermario/releases/download/master/linux.tar.gz";
-    sha256 = "1156cf0d6a88a64c20e2a10fc9445d99cb9a38518f432b1669528dfa82ebb45f";
+    hash = "sha256-bFlt13n13a7UZulwkcdrwRbXfXRWkUTqszAczzAs8Ac=";
+    stripRoot = false;
   };
 
-  binutils-papermario = builtins.fetchurl {
+  binutils-papermario = pkgsNative.fetchzip {
     url =
       "https://github.com/pmret/binutils-papermario/releases/download/master/linux.tar.gz";
-    sha256 = "c3cd88db47ac41f78b557042c7e7ad47ac9c04cee6f0d1069a489c1c9e8c103c";
+    hash = "sha256-HdVaaOjFBJYywA/+uQ2wsqmJrEwBEuFSdo9jPb4qceE=";
   };
 
-  mips-gcc-272 = builtins.fetchurl {
+  mips-gcc-272 = pkgsNative.fetchzip {
     url =
       "https://github.com/decompals/mips-gcc-2.7.2/releases/download/main/gcc-2.7.2-linux.tar.gz";
-    sha256 = "ff3e299c1d952c0a5cb39f7790a208d0c547cf93986eb5607f820c935cedc288";
+    hash = "sha256-0orDbWWom581bJ60SvE96ct5H9Mua0c3gyMHbY7DzRE=";
+    stripRoot = false;
   };
 
-  mips-binutils-26 = builtins.fetchurl {
+  mips-binutils-26 = pkgsNative.fetchzip {
     url =
       "https://github.com/decompals/mips-binutils-2.6/releases/download/main/binutils-2.6-linux.tar.gz";
-    sha256 = "405a7ddb29a0b2eb472b167e8f15472223df1eff3093a5ff31d6e545d3a6c670";
+    hash = "sha256-237UECnNLGSBZEyLJr9rEHC3cT2m5pS0ApDjgkL3WqM=";
+    stripRoot = false;
   };
 
-  egcs-binutils = builtins.fetchurl {
+  egcs-binutils = pkgsNative.fetchzip {
     url =
       "https://github.com/decompals/mips-binutils-egcs-2.9.5/releases/latest/download/mips-binutils-egcs-2.9.5-linux.tar.gz";
-    sha256 = "04pdjk5n7xw7y4xamc4nisq0vdipsxgpq3jmd7j48gfn0hx9kz21";
+    hash = "sha256-k7P1ySnd+GoVbfJkHiVoBIW3Fi8DEhcQTHldcx8QbRk=";
+    stripRoot = false;
   };
 
-  egcs-gcc = builtins.fetchurl {
+  egcs-gcc = pkgsNative.fetchzip {
     url =
       "https://github.com/decompals/mips-gcc-egcs-2.91.66/releases/download/0.2/mips-gcc-egcs-2.91.66-linux.tar.gz";
-    sha256 = "03v1ci7j0hi53z639rwj60xwz0zzi82a9azi0yiw818r754faql0";
+    hash = "sha256-NOJbbKaOWETVkhhQWci+KF73esKPhVDtOmL2ytH88Zo=";
+    stripRoot = false;
   };
 
-  ido = builtins.fetchurl {
+  ido = pkgsNative.fetchzip {
     url =
       "https://github.com/decompals/ido-static-recomp/releases/download/v0.2/ido-5.3-recomp-ubuntu-latest.tar.gz";
-    sha256 = "65b42b9673b6f439e45e5dafab1eca4fc006a68cda87bdb55681f027d9fb903c";
+    hash = "sha256-LvEmsxIeF+JFZFLjIBBbHjDb1ZuvFB5XParZDqamVhE=";
+    stripRoot = false;
   };
 in pkgsCross.mkShell {
   nativeBuildInputs = (with pkgsNative; [
@@ -69,17 +75,18 @@ in pkgsCross.mkShell {
   ]);
 
   shellHook = ''
-    # Install compilers
-    # TODO: use pkgs.stdenv.mkDerivation instead of extracting here
-    tar zx -C tools/build/cc/gcc -f ${gcc-papermario}
-    tar zx -C tools/build/cc/gcc -f ${binutils-papermario}
-    tar zx -C tools/build/cc/gcc2.7.2 -f ${mips-gcc-272}
-    tar zx -C tools/build/cc/gcc2.7.2 -f ${mips-binutils-26}
-    tar zx -C tools/build/cc/ido5.3 -f ${ido}
-    tar zx -C tools/build/cc/egcs -f ${egcs-binutils}
-    tar zx -C tools/build/cc/egcs -f ${egcs-gcc}
+    # Configure expects compilers here
+    # TODO: provide using PATH (needs changes to configure)
+    ln -s tools/build/cc/gcc ${gcc-papermario}
+    ln -s tools/build/cc/gcc ${binutils-papermario}
+    ln -s tools/build/cc/gcc2.7.2 ${mips-gcc-272}
+    ln -s tools/build/cc/gcc2.7.2 ${mips-binutils-26}
+    ln -s tools/build/cc/ido5.3 ${ido}
+    ln -s tools/build/cc/egcs ${egcs-binutils}
+    ln -s tools/build/cc/egcs ${egcs-gcc}
 
     # Fix 'file not found' errors since we're using a newer glibc
+    # TODO: build compilers from source to avoid this. failing that, use a derivation to not repeat this
     for dir in $(find tools/build/cc -type d); do
       for f in $(find $dir -type f); do
         # Silence errors instead of thinking hard about this
